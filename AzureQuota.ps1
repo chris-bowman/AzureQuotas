@@ -92,11 +92,16 @@ function Get-AzNetworkUsage($location, $SubscriptionId)
     return $result.value
 }
 
+if ($Subscriptions -eq $null -or $subscriptions.count -eq 0) {
+    $subscriptions = Get-AzSubscription
+}
+
 # for each subscription get the quota data
-foreach ($SubscriptionId in $Subscriptions)
+foreach ($Sub in $Subscriptions)
 {
-Set-AzContext -SubscriptionId $SubscriptionId
+Set-AzContext $Sub
 $azureContext = Get-AzContext
+$SubscriptionId = $azureContext.Subscription.Id
 $SubscriptionName = $azureContext.Subscription.Name
 
 # Get VM quotas
@@ -135,7 +140,7 @@ foreach ($location in $locations)
     $usage = 0
     if ($storageQuota.Limit -gt 0) { $usage = $storageQuota.CurrentValue / $storageQuota.Limit }
     $json += @"
-{ "SubscriptionId":"$SubscriptionId", "Subscription":"$SubscriptionName", "Name":"$($storageQuota.LocalizedName)", "Location":"$location", "Category":"Storage", "CurrentValue":$($storageQuota.CurrentValue), "Limit":$($storageQuota.Limit),"Usage":$usage }
+{ "SubscriptionId":"$SubscriptionId", "Subscription":"$SubscriptionName", "Name":"$($storageQuota.LocalizedName)", "Location":"$location", "Category":"Storage", "CurrentValue":$($storageQuota.CurrentValue), "Limit":$($storageQuota.Limit),"Usage":$usage },
 "@
  
 }
